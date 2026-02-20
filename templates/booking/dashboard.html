@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Boshqaruv paneli - Zoomga{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <h1 class="section-title">
+                <i class="fas fa-tachometer-alt"></i>
+                Boshqaruv paneli
+            </h1>
+            <p class="text-muted">Zoom uchrashuvlari tizimining asosiy statistikasi</p>
+        </div>
+    </div>
+</div>
+
+<!-- Statistika kartalari -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <i class="fas fa-video"></i>
+        <div class="stat-number">{{ total_meetings }}</div>
+        <div class="stat-label">Jami uchrashuvlar</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-calendar-day"></i>
+        <div class="stat-number">{{ today_meetings }}</div>
+        <div class="stat-label">Bugungi uchrashuvlar</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-clock"></i>
+        <div class="stat-number">{{ pending_requests }}</div>
+        <div class="stat-label">Kutilayotgan so'rovlar</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-building"></i>
+        <div class="stat-number">{{ active_departments }}</div>
+        <div class="stat-label">Faol bo'limlar</div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- So'nggi uchrashuvlar -->
+    <div class="col-lg-8">
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="fas fa-history"></i>
+                So'nggi uchrashuvlar
+            </h2>
+            
+            {% if recent_meetings %}
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Nomi</th>
+                                <th>Bo'lim</th>
+                                <th>Vaqt</th>
+                                <th>Holati</th>
+                                <th>Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for meeting in recent_meetings %}
+                            <tr>
+                                <td>
+                                    <strong>{{ meeting.title }}</strong>
+                                    {% if meeting.description %}
+                                    <br><small class="text-muted">{{ meeting.description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ meeting.department.name }}</span>
+                                </td>
+                                <td>
+                                    <i class="fas fa-clock"></i>
+                                    {{ meeting.start_time|date:"d.m.Y H:i" }}
+                                </td>
+                                <td>
+                                    {% if meeting.status == 'scheduled' %}
+                                        <span class="status-badge status-scheduled">Rejalashtirilgan</span>
+                                    {% elif meeting.status == 'active' %}
+                                        <span class="status-badge status-active">Faol</span>
+                                    {% elif meeting.status == 'ended' %}
+                                        <span class="status-badge status-ended">Tugagan</span>
+                                    {% elif meeting.status == 'cancelled' %}
+                                        <span class="status-badge status-cancelled">Bekor qilingan</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'booking:meeting_detail' meeting.id %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Hozircha uchrashuvlar yo'q</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Kutilayotgan so'rovlar -->
+    <div class="col-lg-4">
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="fas fa-clipboard-list"></i>
+                Kutilayotgan so'rovlar
+            </h2>
+            
+            {% if pending_requests_list %}
+                {% for request in pending_requests_list %}
+                <div class="card mb-3 border-left-primary">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ request.title }}</h6>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i> {{ request.requested_by.first_name }}<br>
+                                <i class="fas fa-building"></i> {{ request.department.name }}<br>
+                                <i class="fas fa-clock"></i> {{ request.preferred_start_time|date:"d.m.Y H:i" }}
+                            </small>
+                        </p>
+                        <a href="{% url 'booking:request_detail' request.id %}" 
+                           class="btn btn-sm btn-primary">
+                            Ko'rish
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Kutilayotgan so'rovlar yo'q</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bo'limlar statistikasi -->
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="fas fa-chart-bar"></i>
+                Bo'limlar bo'yicha statistika
+            </h2>
+            
+            {% if department_stats %}
+                <div class="row">
+                    {% for stat in department_stats %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                            <div>
+                                <h6 class="mb-0">{{ stat.department__name }}</h6>
+                                <small class="text-muted">Uchrashuvlar soni</small>
+                            </div>
+                            <div class="text-end">
+                                <h4 class="mb-0 text-primary">{{ stat.count }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Statistika ma'lumotlari yo'q</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 4px solid var(--primary-color) !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Real-time statistika yangilash
+    function updateStats() {
+        fetch('/booking/api/meeting-stats/')
+            .then(response => response.json())
+            .then(data => {
+                // Statistika kartalarini yangilash
+                const statCards = document.querySelectorAll('.stat-number');
+                if (statCards[0]) statCards[0].textContent = data.total;
+                if (statCards[1]) statCards[1].textContent = data.today;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Har 30 daqiqada yangilash
+    setInterval(updateStats, 30 * 60 * 1000);
+</script>
+{% endblock %}

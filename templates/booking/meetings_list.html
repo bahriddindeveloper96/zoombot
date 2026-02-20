@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Uchrashuvlar - Zoomga{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="section-title mb-0">
+                        <i class="fas fa-calendar"></i>
+                        Uchrashuvlar
+                    </h1>
+                    <p class="text-muted mb-0">Barcha Zoom uchrashuvlari ro'yxati</p>
+                </div>
+                <a href="{% url 'booking:dashboard' %}" class="btn btn-primary-custom">
+                    <i class="fas fa-arrow-left"></i>
+                    Orqaga
+                </a>
+            </div>
+
+            <!-- Filtrlar -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <label for="status_filter" class="form-label">Holati</label>
+                    <select class="form-select" id="status_filter" name="status">
+                        <option value="">Barchasi</option>
+                        {% for status, label in status_choices %}
+                        <option value="{{ status }}" {% if request.GET.status == status %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="department_filter" class="form-label">Bo'lim</label>
+                    <select class="form-select" id="department_filter" name="department">
+                        <option value="">Barchasi</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_filter" class="form-label">Sana</label>
+                    <input type="date" class="form-control" id="date_filter" name="date" 
+                           value="{{ request.GET.date }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary" onclick="filterMeetings()">
+                        <i class="fas fa-filter"></i> Filtrlash
+                    </button>
+                </div>
+            </div>
+
+            <!-- Uchrashuvlar jadvali -->
+            {% if meetings %}
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Nomi</th>
+                                <th>Bo'lim</th>
+                                <th>Yaratuvchi</th>
+                                <th>Boshlanish vaqti</th>
+                                <th>Davomiyligi</th>
+                                <th>Holati</th>
+                                <th>Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for meeting in meetings %}
+                            <tr>
+                                <td>
+                                    <strong>{{ meeting.title }}</strong>
+                                    {% if meeting.description %}
+                                    <br><small class="text-muted">{{ meeting.description|truncatechars:80 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ meeting.department.name }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-circle me-2"></i>
+                                        {{ meeting.created_by.first_name }} {{ meeting.created_by.last_name }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <i class="fas fa-clock"></i>
+                                    {{ meeting.start_time|date:"d.m.Y H:i" }}
+                                </td>
+                                <td>
+                                    <i class="fas fa-hourglass-half"></i>
+                                    {{ meeting.duration }} daqiqa
+                                </td>
+                                <td>
+                                    {% if meeting.status == 'scheduled' %}
+                                        <span class="status-badge status-scheduled">Rejalashtirilgan</span>
+                                    {% elif meeting.status == 'active' %}
+                                        <span class="status-badge status-active">Faol</span>
+                                    {% elif meeting.status == 'ended' %}
+                                        <span class="status-badge status-ended">Tugagan</span>
+                                    {% elif meeting.status == 'cancelled' %}
+                                        <span class="status-badge status-cancelled">Bekor qilingan</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'booking:meeting_detail' meeting.id %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ko'rish">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if meeting.meeting_url %}
+                                        <a href="{{ meeting.meeting_url }}" target="_blank"
+                                           class="btn btn-sm btn-outline-success" title="Zoomga o'tish">
+                                            <i class="fas fa-video"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">Uchrashuvlar topilmadi</h4>
+                    <p class="text-muted">Berilgan filtr bo'yicha uchrashuvlar mavjud emas.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterMeetings() {
+        const status = document.getElementById('status_filter').value;
+        const department = document.getElementById('department_filter').value;
+        const date = document.getElementById('date_filter').value;
+        
+        let url = '{% url "booking:meetings_list" %}?';
+        const params = [];
+        
+        if (status) params.push(`status=${status}`);
+        if (department) params.push(`department=${department}`);
+        if (date) params.push(`date=${date}`);
+        
+        url += params.join('&');
+        window.location.href = url;
+    }
+
+    // Enter tugmasi bilan filtrlash
+    document.getElementById('date_filter').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            filterMeetings();
+        }
+    });
+</script>
+{% endblock %}

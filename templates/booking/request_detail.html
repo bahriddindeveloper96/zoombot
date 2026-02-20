@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ request.title }} - So'rov tafsilotlari{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="section-title mb-0">
+                        <i class="fas fa-clipboard-list"></i>
+                        {{ request.title }}
+                    </h1>
+                    <p class="text-muted mb-0">So'rov tafsilotlari</p>
+                </div>
+                <a href="{% url 'booking:requests_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Orqaga
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Asosiy ma'lumotlar -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i>
+                                So'rov ma'lumotlari
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nomi:</strong> {{ request.title }}</p>
+                                    <p><strong>Bo'lim:</strong> 
+                                        <span class="badge bg-primary">{{ request.department.name }}</span>
+                                    </p>
+                                    <p><strong>So'rovchi:</strong> 
+                                        {{ request.requested_by.first_name }} {{ request.requested_by.last_name }}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Qabul qilingan vaqt:</strong> 
+                                        <i class="fas fa-clock"></i>
+                                        {{ request.preferred_start_time|date:"d.m.Y H:i" }}
+                                    </p>
+                                    <p><strong>Davomiyligi:</strong> 
+                                        <i class="fas fa-hourglass-half"></i>
+                                        {{ request.duration }} daqiqa
+                                    </p>
+                                    <p><strong>Holati:</strong> 
+                                        {% if request.status == 'pending' %}
+                                            <span class="status-badge bg-warning text-dark">Kutilmoqda</span>
+                                        {% elif request.status == 'approved' %}
+                                            <span class="status-badge bg-success text-white">Tasdiqlangan</span>
+                                        {% elif request.status == 'rejected' %}
+                                            <span class="status-badge bg-danger text-white">Rad etilgan</span>
+                                        {% elif request.status == 'cancelled' %}
+                                            <span class="status-badge bg-secondary text-white">Bekor qilingan</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            {% if request.description %}
+                                <div class="mt-3">
+                                    <p><strong>Tavsifi:</strong></p>
+                                    <p class="text-muted">{{ request.description|linebreaks }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if request.rejection_reason %}
+                    <div class="card mb-4">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Rad etish sababi
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-danger">{{ request.rejection_reason }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Status -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line"></i>
+                                Status
+                            </h5>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if request.status == 'pending' %}
+                                <div class="text-warning mb-3">
+                                    <i class="fas fa-clock fa-3x"></i>
+                                </div>
+                                <h4 class="text-warning">Kutilmoqda</h4>
+                                <p class="text-muted">So'rov ko'rib chiqilmoqda</p>
+                            {% elif request.status == 'approved' %}
+                                <div class="text-success mb-3">
+                                    <i class="fas fa-check-circle fa-3x"></i>
+                                </div>
+                                <h4 class="text-success">Tasdiqlangan</h4>
+                                <p class="text-muted">So'rov tasdiqlandi</p>
+                            {% elif request.status == 'rejected' %}
+                                <div class="text-danger mb-3">
+                                    <i class="fas fa-times-circle fa-3x"></i>
+                                </div>
+                                <h4 class="text-danger">Rad etilgan</h4>
+                                <p class="text-muted">So'rov rad etildi</p>
+                            {% elif request.status == 'cancelled' %}
+                                <div class="text-secondary mb-3">
+                                    <i class="fas fa-ban fa-3x"></i>
+                                </div>
+                                <h4 class="text-secondary">Bekor qilingan</h4>
+                                <p class="text-muted">So'rov bekor qilindi</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Vaqt ma'lumotlari -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-alt"></i>
+                                Vaqt ma'lumotlari
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Yaratilgan:</strong><br>
+                                <small class="text-muted">{{ request.created_at|date:"d.m.Y H:i" }}</small>
+                            </p>
+                            {% if request.processed_at %}
+                                <p><strong>Qayta ishlangan:</strong><br>
+                                    <small class="text-muted">{{ request.processed_at|date:"d.m.Y H:i" }}</small>
+                                </p>
+                                <p><strong>Qayta ishlagan:</strong><br>
+                                    <small class="text-muted">{{ request.processed_by.first_name }} {{ request.processed_by.last_name }}</small>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Amallar -->
+                    {% if request.status == 'pending' %}
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-tools"></i>
+                                Amallar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" class="d-grid gap-2">
+                                {% csrf_token %}
+                                <button type="submit" name="action" value="approve" class="btn btn-success">
+                                    <i class="fas fa-check"></i>
+                                    Tasdiqlash
+                                </button>
+                                <button type="button" class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rejectionForm">
+                                    <i class="fas fa-times"></i>
+                                    Rad etish
+                                </button>
+                                
+                                <div class="collapse" id="rejectionForm">
+                                    <div class="mt-3">
+                                        <label for="rejection_reason" class="form-label">Rad etish sababi</label>
+                                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" 
+                                                  placeholder="Rad etish sababini kiriting..." required></textarea>
+                                        <button type="submit" name="action" value="reject" class="btn btn-danger mt-2 w-100">
+                                            <i class="fas fa-times"></i>
+                                            Rad etishni tasdiqlash
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.bg-warning {
+    background-color: #ffc107;
+}
+
+.bg-success {
+    background-color: #28a745;
+}
+
+.bg-danger {
+    background-color: #dc3545;
+}
+
+.bg-secondary {
+    background-color: #6c757d;
+}
+
+.bg-primary {
+    background-color: #007bff;
+}
+
+.text-warning {
+    color: #856404;
+}
+
+.text-success {
+    color: #155724;
+}
+
+.text-danger {
+    color: #721c24;
+}
+
+.text-secondary {
+    color: #6c757d;
+}
+
+.text-dark {
+    color: #343a40;
+}
+
+.text-white {
+    color: #ffffff;
+}
+</style>
+{% endblock %}

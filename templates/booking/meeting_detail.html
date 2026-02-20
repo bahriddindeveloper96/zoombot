@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ meeting.title }} - Zoomga{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="section-title mb-0">
+                        <i class="fas fa-video"></i>
+                        {{ meeting.title }}
+                    </h1>
+                    <p class="text-muted mb-0">Uchrashuv tafsilotlari</p>
+                </div>
+                <div>
+                    <a href="{% url 'booking:meetings_list' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i>
+                        Orqaga
+                    </a>
+                    {% if user.is_staff %}
+                        {% if meeting.status == 'scheduled' %}
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="activate">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-play"></i>
+                                    Faollashtirish
+                                </button>
+                            </form>
+                        {% elif meeting.status == 'active' %}
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="cancel">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-stop"></i>
+                                    Bekor qilish
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Asosiy ma'lumotlar -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i>
+                                Asosiy ma'lumotlar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nomi:</strong> {{ meeting.title }}</p>
+                                    <p><strong>Bo'lim:</strong> 
+                                        <span class="badge bg-primary">{{ meeting.department.name }}</span>
+                                    </p>
+                                    <p><strong>Yaratuvchi:</strong> 
+                                        {{ meeting.created_by.first_name }} {{ meeting.created_by.last_name }}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Boshlanish vaqti:</strong> 
+                                        <i class="fas fa-clock"></i>
+                                        {{ meeting.start_time|date:"d.m.Y H:i" }}
+                                    </p>
+                                    <p><strong>Tugash vaqti:</strong> 
+                                        <i class="fas fa-clock"></i>
+                                        {{ meeting.end_time|date:"d.m.Y H:i" }}
+                                    </p>
+                                    <p><strong>Davomiyligi:</strong> 
+                                        <i class="fas fa-hourglass-half"></i>
+                                        {{ meeting.duration }} daqiqa
+                                    </p>
+                                </div>
+                            </div>
+                            {% if meeting.description %}
+                                <div class="mt-3">
+                                    <p><strong>Tavsifi:</strong></p>
+                                    <p class="text-muted">{{ meeting.description|linebreaks }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Zoom ma'lumotlari -->
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-video"></i>
+                                Zoom ma'lumotlari
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if meeting.meeting_url %}
+                                <div class="mb-3">
+                                    <p><strong>Uchrashuv havolasi:</strong></p>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" value="{{ meeting.meeting_url }}" readonly>
+                                        <button class="btn btn-outline-primary" onclick="copyToClipboard('{{ meeting.meeting_url }}')">
+                                            <i class="fas fa-copy"></i>
+                                            Nusxa olish
+                                        </button>
+                                        <a href="{{ meeting.meeting_url }}" target="_blank" class="btn btn-success">
+                                            <i class="fas fa-external-link-alt"></i>
+                                            Zoomga o'tish
+                                        </a>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Uchrashuv havolasi hali yaratilmagan.
+                                </div>
+                            {% endif %}
+                            
+                            {% if meeting.password %}
+                                <div class="mb-3">
+                                    <p><strong>Parol:</strong></p>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" value="{{ meeting.password }}" readonly>
+                                        <button class="btn btn-outline-primary" onclick="copyToClipboard('{{ meeting.password }}')">
+                                            <i class="fas fa-copy"></i>
+                                            Nusxa olish
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            {% if meeting.zoom_meeting_id %}
+                                <p><strong>Zoom Meeting ID:</strong> {{ meeting.zoom_meeting_id }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Status -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line"></i>
+                                Holat
+                            </h5>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if meeting.status == 'scheduled' %}
+                                <div class="text-warning mb-3">
+                                    <i class="fas fa-clock fa-3x"></i>
+                                </div>
+                                <h4 class="text-warning">Rejalashtirilgan</h4>
+                                <p class="text-muted">Uchrashuv kutilmoqda</p>
+                            {% elif meeting.status == 'active' %}
+                                <div class="text-success mb-3">
+                                    <i class="fas fa-play-circle fa-3x"></i>
+                                </div>
+                                <h4 class="text-success">Faol</h4>
+                                <p class="text-muted">Uchrashuv faol</p>
+                            {% elif meeting.status == 'ended' %}
+                                <div class="text-info mb-3">
+                                    <i class="fas fa-check-circle fa-3x"></i>
+                                </div>
+                                <h4 class="text-info">Tugagan</h4>
+                                <p class="text-muted">Uchrashuv tugagan</p>
+                            {% elif meeting.status == 'cancelled' %}
+                                <div class="text-danger mb-3">
+                                    <i class="fas fa-times-circle fa-3x"></i>
+                                </div>
+                                <h4 class="text-danger">Bekor qilingan</h4>
+                                <p class="text-muted">Uchrashuv bekor qilingan</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Vaqt ma'lumotlari -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-alt"></i>
+                                Vaqt ma'lumotlari
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Yaratilgan:</strong><br>
+                                <small class="text-muted">{{ meeting.created_at|date:"d.m.Y H:i" }}</small>
+                            </p>
+                            <p><strong>Oxindi yangilangan:</strong><br>
+                                <small class="text-muted">{{ meeting.updated_at|date:"d.m.Y H:i" }}</small>
+                            </p>
+                            <p><strong>Boshlanishgacha qolgan vaqt:</strong><br>
+                                <small class="text-muted" id="time-remaining"></small>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Amallar -->
+                    {% if meeting.meeting_url %}
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-tools"></i>
+                                Amallar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{{ meeting.meeting_url }}" target="_blank" class="btn btn-success">
+                                    <i class="fas fa-video"></i>
+                                    Zoomga o'tish
+                                </a>
+                                <button class="btn btn-outline-primary" onclick="shareMeeting()">
+                                    <i class="fas fa-share"></i>
+                                    Ulashish
+                                </button>
+                                <button class="btn btn-outline-info" onclick="addToCalendar()">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    Kalendarga qo'shish
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            showNotification('Nusxa olindi!', 'success');
+        }, function(err) {
+            showNotification('Nusxa olishda xatolik!', 'danger');
+        });
+    }
+
+    function showNotification(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+    }
+
+    function shareMeeting() {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ meeting.title }}',
+                text: 'Zoom uchrashuviga taklif',
+                url: '{{ meeting.meeting_url }}'
+            });
+        } else {
+            copyToClipboard('{{ meeting.meeting_url }}');
+        }
+    }
+
+    function addToCalendar() {
+        const startTime = '{{ meeting.start_time|date:"Y-m-d\\TH:i:s" }}';
+        const endTime = '{{ meeting.end_time|date:"Y-m-d\\TH:i:s" }}';
+        const title = encodeURIComponent('{{ meeting.title }}');
+        const details = encodeURIComponent('{{ meeting.description }}');
+        
+        const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startTime}/${endTime}&details=${details}`;
+        window.open(googleCalendarUrl, '_blank');
+    }
+
+    // Qolgan vaqtni hisoblash
+    function updateTimeRemaining() {
+        const startTime = new Date('{{ meeting.start_time|date:"Y-m-d\\TH:i:s" }}').getTime();
+        const now = new Date().getTime();
+        const distance = startTime - now;
+
+        if (distance < 0) {
+            document.getElementById('time-remaining').innerHTML = 'Uchrashuv boshlangan';
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+        let timeString = '';
+        if (days > 0) timeString += `${days} kun `;
+        if (hours > 0) timeString += `${hours} soat `;
+        if (minutes > 0) timeString += `${minutes} daqiqa`;
+
+        document.getElementById('time-remaining').innerHTML = timeString;
+    }
+
+    // Har daqiqada yangilash
+    setInterval(updateTimeRemaining, 60000);
+    updateTimeRemaining();
+</script>
+{% endblock %}

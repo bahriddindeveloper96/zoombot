@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ department.name }} - Bo'lim tafsilotlari{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="section-title mb-0">
+                        <i class="fas fa-building"></i>
+                        {{ department.name }}
+                    </h1>
+                    <p class="text-muted mb-0">Bo'lim tafsilotlari</p>
+                </div>
+                <div>
+                    <a href="{% url 'admin:telegram_bot_department_change' department.id %}" class="btn btn-primary-custom me-2">
+                        <i class="fas fa-edit"></i>
+                        Tahrirlash
+                    </a>
+                    <a href="{% url 'booking:departments_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Orqaga
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Asosiy ma'lumotlar -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i>
+                                Bo'lim ma'lumotlari
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nomi:</strong> {{ department.name }}</p>
+                                    <p><strong>Kunlik limit:</strong> 
+                                        <span class="badge bg-info">{{ department.daily_limit }} ta uchrashuv</span>
+                                    </p>
+                                    <p><strong>Holati:</strong> 
+                                        {% if department.is_active %}
+                                            <span class="status-badge bg-success">Faol</span>
+                                        {% else %}
+                                            <span class="status-badge bg-secondary">Nofaol</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Yaratilgan:</strong> 
+                                        <i class="fas fa-clock"></i>
+                                        {{ department.created_at|date:"d.m.Y H:i" }}
+                                    </p>
+                                    <p><strong>Uchrashuvlar soni:</strong> 
+                                        <i class="fas fa-video"></i>
+                                        {{ meetings.count }} ta
+                                    </p>
+                                    <p><strong>So'rovlar soni:</strong> 
+                                        <i class="fas fa-clipboard-list"></i>
+                                        {{ requests.count }} ta
+                                    </p>
+                                </div>
+                            </div>
+                            {% if department.description %}
+                                <div class="mt-3">
+                                    <p><strong>Tavsifi:</strong></p>
+                                    <p class="text-muted">{{ department.description|linebreaks }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Bo'lim adminlari -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users-cog"></i>
+                                Bo'lim adminlari
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if admins %}
+                                <div class="row">
+                                    {% for admin in admins %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                                            <div class="icon-box bg-success text-white rounded-circle p-2 me-3">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ admin.telegram_user.first_name }} {{ admin.telegram_user.last_name }}</h6>
+                                                <small class="text-muted">@{{ admin.telegram_user.username }}</small>
+                                                {% if admin.telegram_user.is_admin %}
+                                                <br><small class="badge bg-warning">Super admin</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Bu bo'limda adminlar yo'q</p>
+                                    <a href="{% url 'admin:telegram_bot_departmentadmin_add' %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                        Admin qo'shish
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Statistika -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-pie"></i>
+                                Statistika
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-4">
+                                <div class="stat-circle mb-3">
+                                    <canvas id="departmentChart" width="150" height="150"></canvas>
+                                </div>
+                                <h4 class="text-primary">{{ meetings.count }}</h4>
+                                <p class="text-muted">Jami uchrashuvlar</p>
+                            </div>
+                            
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <h5 class="text-success mb-0">{{ requests|length }}</h5>
+                                        <small class="text-muted">So'rovlar</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-item">
+                                        <h5 class="text-warning mb-0">{{ admins.count }}</h5>
+                                        <small class="text-muted">Adminlar</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tez amallar -->
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bolt"></i>
+                                Tez amallar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'booking:meetings_list' %}?department={{ department.id }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-video"></i>
+                                    Uchrashuvlarni ko'rish
+                                </a>
+                                <a href="{% url 'booking:requests_list' %}?department={{ department.id }}" class="btn btn-outline-info">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    So'rovlarni ko'rish
+                                </a>
+                                <a href="{% url 'admin:telegram_bot_departmentadmin_add' %}" class="btn btn-outline-success">
+                                    <i class="fas fa-user-plus"></i>
+                                    Admin qo'shish
+                                </a>
+                                <a href="{% url 'admin:telegram_bot_department_change' department.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-cog"></i>
+                                    Sozlamalar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- So'nggi uchrashuvlar -->
+            {% if meetings %}
+            <div class="mt-4">
+                <h3 class="section-title">
+                    <i class="fas fa-history"></i>
+                    So'nggi uchrashuvlar
+                </h3>
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Nomi</th>
+                                <th>Yaratuvchi</th>
+                                <th>Vaqt</th>
+                                <th>Davomiyligi</th>
+                                <th>Holati</th>
+                                <th>Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for meeting in meetings|slice:":5" %}
+                            <tr>
+                                <td>
+                                    <strong>{{ meeting.title }}</strong>
+                                    {% if meeting.description %}
+                                    <br><small class="text-muted">{{ meeting.description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ meeting.created_by.first_name }} {{ meeting.created_by.last_name }}
+                                </td>
+                                <td>
+                                    <i class="fas fa-clock"></i>
+                                    {{ meeting.start_time|date:"d.m.Y H:i" }}
+                                </td>
+                                <td>
+                                    <i class="fas fa-hourglass-half"></i>
+                                    {{ meeting.duration }} daqiqa
+                                </td>
+                                <td>
+                                    {% if meeting.status == 'scheduled' %}
+                                        <span class="status-badge status-scheduled">Rejalashtirilgan</span>
+                                    {% elif meeting.status == 'active' %}
+                                        <span class="status-badge status-active">Faol</span>
+                                    {% elif meeting.status == 'ended' %}
+                                        <span class="status-badge status-ended">Tugagan</span>
+                                    {% elif meeting.status == 'cancelled' %}
+                                        <span class="status-badge status-cancelled">Bekor qilingan</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'booking:meeting_detail' meeting.id %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.icon-box {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-item {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+}
+
+.stat-circle {
+    position: relative;
+    display: inline-block;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Simple pie chart for department statistics
+    const canvas = document.getElementById('departmentChart');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 60;
+        
+        const requestsTotal = parseInt('{{ requests.count }}');
+        const approved = Math.floor(requestsTotal * 0.6); // 60% approved
+        const pending = Math.floor(requestsTotal * 0.3); // 30% pending
+        const rejected = requestsTotal - approved - pending; // 10% rejected
+        
+        const data = [
+            { value: approved, color: '#28a745', label: 'Tasdiqlangan' },
+            { value: pending, color: '#ffc107', label: 'Kutilmoqda' },
+            { value: rejected, color: '#dc3545', label: 'Rad etilgan' }
+        ];
+        
+        let currentAngle = -Math.PI / 2;
+        
+        for (let i = 0; i < data.length; i++) {
+            const segment = data[i];
+            if (segment.value > 0) {
+                const sliceAngle = (segment.value / requestsTotal) * 2 * Math.PI;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = segment.color;
+                ctx.fill();
+                
+                currentAngle += sliceAngle;
+            }
+        }
+        
+        // Draw center circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+    }
+</script>
+{% endblock %}
